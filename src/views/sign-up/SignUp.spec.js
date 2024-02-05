@@ -65,7 +65,7 @@ describe('Sign Up', () => {
     expect(screen.getByRole('button', { name: 'Sign Up'})).toBeDisabled()
   })
 
-  describe ('when user stes same valu for password inputs', () => {
+  describe ('when user stes same value for password inputs', () => {
     it('enables buttons', async() => {
       const user = userEvent.setup()
       render(SignUp)

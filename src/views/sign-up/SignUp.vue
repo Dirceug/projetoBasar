@@ -5,17 +5,18 @@
       <label for="username">Username</label>
       <input id="username" placeholder="Escolha um apelido" />
     </div>
+    {{ username }}
     <div>
       <label for="email">E-mail</label>
       <input id="email" placeholder="Digite aqui seu e-mail" />
     </div>
     <div>
       <label for="password">Password</label>
-      <input
-        id="password"
-        type="password"
-        placeholder="Coloque aqui a senha"
-        v-on:input="onChangePassword"
+      <input 
+        id="password" 
+        type="password" 
+        placeholder="Coloque aqui a senha" 
+        v-model="password" 
       />
     </div>
     <div>
@@ -24,32 +25,37 @@
         id="passwordRepeat"
         type="password"
         placeholder="Coloque aqui a senha novamente"
-        v-on:input="onChangePasswordRepeat"
+        v-model="passwordRepeat"
       />
     </div>
-    <button :disabled="disabled">Sign Up</button>
+    <button :disabled="isDisabled">Sign Up</button>
   </div>
 </template>
+
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-// let disabled = ref(true)
-// setTimeout(() => {
-//   console.log('button must be enabled')
-//   disabled.value = false
-// }, 1000)
-
-const disabled = ref(true)
 const password = ref('')
 const passwordRepeat = ref('')
+const username = ref('')
 
-const onChangePassword = (event) => {
-  password.value = event.target.value
-  disabled.value = password.value !== passwordRepeat.value
-}
+const isDisabled = computed(() => {
+  return password.value || passwordRepeat.value ? password.value !== passwordRepeat.value : true
+})
 
-const onChangePasswordRepeat = (event) => {
-  passwordRepeat.value = event.target.value
-  disabled.value = password.value !== passwordRepeat.value
-}
 </script>
+
+<!-- <script>
+  export default{
+    data() {
+      return {
+        password: '',
+        passwordRepeat: '',
+      }
+    }, computed: {
+      isDisabled(){
+        return (this.password || this.passwordRepeat) ? this.password !== this.passwordRepeat: true 
+      }
+    }
+  }
+</script> -->
