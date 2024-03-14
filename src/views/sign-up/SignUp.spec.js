@@ -8,6 +8,46 @@ import { HttpResponse, http } from 'msw'
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
+let requestBody
+let counter = 0
+
+const server = setupServer(
+  http.post('/api/v1/users', async ({ request }) => {
+    requestBody = await request.json()
+    counter = +1
+    return HttpResponse.json({})
+  })
+)
+
+beforeEach(() => {
+  counter = 0
+})
+
+beforeAll(() => server.listen())
+
+afterAll(() => server.close())
+
+const setup = async () => {
+  const user = userEvent.setup()
+  const result = render(SignUp) //Função que renderiza o componente
+  const usernameInput = screen.getByLabelText('Username')
+  const emailInput = screen.getByLabelText('E-mail')
+  const passwordInput = screen.getByLabelText('Password')
+  const passwordRepeatInput = screen.getByLabelText('Password Repeat')
+  await user.type(usernameInput, 'user1')
+  await user.type(emailInput, 'user1@mail.com')
+  await user.type(passwordInput, 'P4ssword')
+  await user.type(passwordRepeatInput, 'P4ssword')
+  const button = screen.getByRole('button', { name: 'Sign Up' })
+  return {
+    ...result,
+    user,
+    elements: {
+      button
+    }
+  }
+}
+
 describe('Sign Up', () => {
   it('has Sign Up header', () => {
     render(SignUp)
@@ -69,83 +109,55 @@ describe('Sign Up', () => {
     expect(screen.getByRole('button', { name: 'Sign Up' })).toBeDisabled()
   })
 
-  describe('when user sets same value for password inputs', () => {
-    it('enables buttons', async () => {
-      const user = userEvent.setup()
-      render(SignUp)
-      const passwordInput = screen.getByLabelText('Password')
-      const passwordRepeatInput = screen.getByLabelText('Password Repeat')
-      await user.type(passwordInput, 'P4ssword')
-      await user.type(passwordRepeatInput, 'P4ssword')
-      expect(screen.getByRole('button', { name: 'Sign Up' })).toBeEnabled()
-    })
-
-    describe('when user submits form', () => {
-      it('sends username, email password to the backend', async () => {
-        let requestBody
-        const server = setupServer(
-          http.post('/api/v1/users', async ({ request }) => {
-            requestBody = await request.json()
-            return HttpResponse.json({})
-          })
-        )
-        server.listen()
-        const user = userEvent.setup()
-        render(SignUp) //Função que renderiza o componente
-        const usernameInput = screen.getByLabelText('Username')
-        const emailInput = screen.getByLabelText('E-mail')
-        const passwordInput = screen.getByLabelText('Password')
-        const passwordRepeatInput = screen.getByLabelText('Password Repeat')
-        await user.type(usernameInput, 'user1')
-        await user.type(emailInput, 'user1@mail.com')
-        await user.type(passwordInput, 'P4ssword')
-        await user.type(passwordRepeatInput, 'P4ssword')
-        const button = screen.getByRole('button', { name: 'Sign Up' })
-        await user.click(button)
-        await waitFor(() => {
-          expect(requestBody).toEqual({
-            username: 'user1',
-            email: 'user1@mail.com',
-            password: 'P4ssword'
-          })
-        })
-        server.close()
-      })
-    })
+  it('does not display spinner', () => {
+    render(SignUp)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
-  describe('When there is an ongoing API call', () => {
-    it.only('does not alow clicking in the button'),
-      async () => {
-        let counter = 0
-        // let requestBody
-        const server = setupServer(
-          http.post('/api/v1/users', () => {
-            // requestBody = await request.json()
-            counter += 1
-            return HttpResponse.json({})
-          })
-        )
-        server.listen()
-        const user = userEvent.setup()
-        render(SignUp) //Função que renderiza o componente
-        const usernameInput = screen.getByLabelText('Username')
-        const emailInput = screen.getByLabelText('E-mail')
-        const passwordInput = screen.getByLabelText('Password')
-        const passwordRepeatInput = screen.getByLabelText('Password Repeat')
-        await user.type(usernameInput, 'user1')
-        await user.type(emailInput, 'user1@mail.com')
-        await user.type(passwordInput, 'P4ssword')
-        await user.type(passwordRepeatInput, 'P4ssword')
-        const button = screen.getByRole('button', { name: 'Sign Up' })
-        await user.click(button)
-        await user.click(button)
+  describe('when user sets same value for password inputs', () => {
+    it('enables buttons', async () => {
+      const {
+        elements: { button }
+      } = await setup()
+      expect(button).toBeEnabled()
+    })
+  })
+  describe('when user submits form', () => {
+    it('sends username, email password to the backend', async () => {
+      const {
+        user,
+        elements: { button }
+      } = await setup()
+      await user.click(button)
+      await waitFor(() => {
+        expect(requestBody).toEqual({
+          username: 'user1',
+          email: 'user1@mail.com',
+          password: 'P4ssword'
+        })
+      })
+    })
+
+    describe('When there is an ongoing API call', () => {
+      it('does not alow clicking in the button', async () => {
+        const {
+          user,
+          elements: { button }
+        } = await setup()
         await user.click(button)
         await user.click(button)
         await waitFor(() => {
           expect(counter).toBe(1)
         })
-        server.close()
-      }
+      })
+      it('displays spinner', async () => {
+        const {
+          user,
+          elements: { button }
+        } = await setup()
+        await user.click(button)
+        expect(screen.getByRole('status')).toBeInTheDocument()
+      })
+    })
   })
 })

@@ -47,7 +47,11 @@
           />
         </div>
         <div class="text-center">
-          <button :disabled="isDisabled || apiProgress" class="btn btn-primary">Sign Up</button>
+          <button :disabled="isDisabled || apiProgress" class="btn btn-primary">
+            <span v-if="apiProgress" role="status" class="spinner-border spinner-border-sm text-Ok">
+            </span>
+              Sign Up
+          </button>
         </div>
       </div>
     </form>
@@ -100,7 +104,7 @@ export default {
     submit() {
       this.apiProgress = true
       const { passwordRepeat, ...body } = this.formState
-      axios.post('api/v1/users', body)
+      axios.post('/api/v1/users', body)
     }
   },
   computed: {
